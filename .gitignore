@@ -1,0 +1,5 @@
+# Variable Files
+*.auto.tfvars
+*.auto.tfvars.json
+# Local .terraform directories
+.terraform/
