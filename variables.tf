@@ -87,3 +87,30 @@ variable "tls_version" {
     error_message = "TLS version must be one of: only-1.2, only-1.0, any."
   }
 }
+
+# =================================================================================================
+# Bridge settings
+# =================================================================================================
+variable "bridge_name" {
+  type        = string
+  default     = "BR1"
+  description = "Name of the main bridge interface."
+}
+
+variable "bridge_comment" {
+  type        = string
+  default     = ""
+  description = "Comment for the bridge interface."
+}
+
+variable "bridge_mtu" {
+  type        = number
+  default     = null
+  description = "MTU for the bridge interface."
+}
+
+variable "bridge_vlan_filtering" {
+  type        = bool
+  default     = true
+  description = "Whether to enable VLAN filtering on the bridge."
+}
