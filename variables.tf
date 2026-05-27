@@ -52,3 +52,38 @@ variable "certificate_validity_days" {
     error_message = "Certificate validity must be greater than 0 days."
   }
 }
+# =================================================================================================
+# IP Services
+# =================================================================================================
+variable "ip_services" {
+  type = map(object({
+    enabled = bool
+    port    = number
+  }))
+  default = {
+    "api"     = { enabled = false, port = 8728 }
+    "api-ssl" = { enabled = false, port = 8729 }
+    "ftp"     = { enabled = false, port = 21 }
+    "ssh"     = { enabled = true, port = 22 }
+    "telnet"  = { enabled = false, port = 23 }
+    "winbox"  = { enabled = true, port = 8291 }
+    "www"     = { enabled = true, port = 80 }
+    "www-ssl" = { enabled = true, port = 443 }
+  }
+  description = "Map of IP services to configure. Each service has an 'enabled' flag and a 'port' number. TLS services (api-ssl, www-ssl) automatically use the device certificate."
+  validation {
+    condition = alltrue([
+      for name, svc in var.ip_services : svc.port > 0 && svc.port <= 65535
+    ])
+    error_message = "All service ports must be between 1 and 65535."
+  }
+}
+variable "tls_version" {
+  type        = string
+  default     = "any"
+  description = "TLS version to use for SSL-enabled IP services (api-ssl, www-ssl)."
+  validation {
+    condition     = contains(["only-1.2", "only-1.0", "any"], var.tls_version)
+    error_message = "TLS version must be one of: only-1.2, only-1.0, any."
+  }
+}
