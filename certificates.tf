@@ -5,36 +5,28 @@
 resource "routeros_system_certificate" "local-root-ca-cert" {
   name        = "local-root-cert"
   common_name = "local-cert"
-  key_size    = var.certificate_key_type
+  key_size    = "prime256v1"
   key_usage   = ["key-cert-sign", "crl-sign"]
   trusted     = true
   sign {}
 
-  lifecycle {
-    ignore_changes = [sign]
-  }
+  lifecycle { ignore_changes = [ sign ] }
 }
-
-
 # =================================================================================================
 # Device Certificate (signed by root CA)
 # Used by TLS-enabled services (api-ssl, www-ssl)
 # =================================================================================================
 resource "routeros_system_certificate" "webfig" {
-  name         = "webfig"
-  common_name  = var.certificate_common_name
+  name        = "webfig"
+  common_name = var.certificate_common_name
   organization = var.certificate_organization
-  days_valid   = var.certificate_validity_days
-  key_size     = var.certificate_key_type
+  days_valid   = 3650
 
   key_usage = ["key-cert-sign", "crl-sign", "digital-signature", "key-agreement", "tls-server"]
+  key_size  = "prime256v1"
 
   trusted = true
-  sign {
-    ca = routeros_system_certificate.local-root-ca-cert.name
-  }
+  sign { ca = routeros_system_certificate.local-root-ca-cert.name }
 
-  lifecycle {
-    ignore_changes = [sign]
-  }
+  lifecycle { ignore_changes = [ sign ] }
 }
