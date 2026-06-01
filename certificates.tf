@@ -10,15 +10,15 @@ resource "routeros_system_certificate" "local-root-ca-cert" {
   trusted     = true
   sign {}
 
-  lifecycle { ignore_changes = [ sign ] }
+  lifecycle { ignore_changes = [sign] }
 }
 # =================================================================================================
 # Device Certificate (signed by root CA)
 # Used by TLS-enabled services (api-ssl, www-ssl)
 # =================================================================================================
 resource "routeros_system_certificate" "webfig" {
-  name        = "webfig"
-  common_name = var.certificate_common_name
+  name         = "webfig"
+  common_name  = var.certificate_common_name
   organization = var.certificate_organization
   days_valid   = 3650
 
@@ -28,5 +28,5 @@ resource "routeros_system_certificate" "webfig" {
   trusted = true
   sign { ca = routeros_system_certificate.local-root-ca-cert.name }
 
-  lifecycle { ignore_changes = [ sign ] }
+  lifecycle { ignore_changes = [sign] }
 }
