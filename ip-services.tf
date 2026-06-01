@@ -3,13 +3,13 @@
 # https://registry.terraform.io/providers/terraform-routeros/routeros/latest/docs/resources/ip_service
 # =================================================================================================
 resource "routeros_ip_service" "disabled" {
-  for_each = { "api" = 8728, "ftp" = 21, "telnet" = 23, "api-ssl" = 8729 }
+  for_each = { "api" = 8728, "ftp" = 21, "telnet" = 23, "api-ssl" = 8729, "www" = 80 }
   numbers  = each.key
   port     = each.value
   disabled = true
 }
 resource "routeros_ip_service" "enabled" {
-  for_each = { "winbox" = 8291, "ssh" = 22, "www" = 80, "reverse-proxy" = 443 }
+  for_each = { "winbox" = 8291, "ssh" = 22}
   numbers  = each.key
   port     = each.value
   disabled = false
