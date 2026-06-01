@@ -9,7 +9,7 @@ resource "routeros_ip_service" "disabled" {
   disabled = true
 }
 resource "routeros_ip_service" "enabled" {
-  for_each = { "winbox" = 8291, "ssh" = 22}
+  for_each = { "winbox" = 8291, "ssh" = 22 }
   numbers  = each.key
   port     = each.value
   disabled = false
