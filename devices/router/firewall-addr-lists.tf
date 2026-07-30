@@ -85,3 +85,25 @@ resource "routeros_ip_firewall_addr_list" "kindles_alex" {
   address = "10.0.30.18"
   comment = "Alex's Kindle"
 }
+
+# k8s-nodes — ONLY the three node addresses (no VIPs). Added 2026-07-30 for
+# the ExternalDNS REST-API input rule: the webhook provider pods egress with
+# the node address, and being narrower than k8s-cluster keeps the router API
+# closed to traffic sourced from the LoadBalancer VIP range.
+resource "routeros_ip_firewall_addr_list" "k8s_nodes_logos" {
+  list    = "k8s-nodes"
+  address = "10.0.20.2"
+  comment = "logos"
+}
+
+resource "routeros_ip_firewall_addr_list" "k8s_nodes_ontos" {
+  list    = "k8s-nodes"
+  address = "10.0.20.3"
+  comment = "ontos"
+}
+
+resource "routeros_ip_firewall_addr_list" "k8s_nodes_pneuma" {
+  list    = "k8s-nodes"
+  address = "10.0.20.4"
+  comment = "pneuma"
+}

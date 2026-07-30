@@ -18,7 +18,7 @@ resource "routeros_system_routerboard_settings" "routerboard" {
 resource "routeros_system_scheduler" "scheduled_reboot" {
   name       = "scheduled_reboot"
   on_event   = "/system reboot"
-  policy     = ["ftp", "reboot", "read", "write", "policy", "test", "password", "sniff", "sensitive", "romon"]
+  policy     = ["reboot"]
   start_date = "2026-03-26"
   start_time = "05:00:00"
 }

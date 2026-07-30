@@ -25,8 +25,12 @@ resource "routeros_ip_route" "default" {
 # on-device. Every other /ip dns attribute is at its RouterOS default and
 # is deliberately left unset.
 
+# allow_remote_requests turned off 2026-07-30 (report finding 4): nothing
+# legitimately queries the switch for DNS — DHCP hands out 192.168.0.1 — and
+# with it on, the switch was an open resolver to any VLAN that could route to
+# it. The switch's own lookups are unaffected.
 resource "routeros_ip_dns" "dns" {
-  allow_remote_requests = true
+  allow_remote_requests = false
   servers               = ["192.168.0.1"]
 
   # The provider's delete handler resets allow-remote-requests/servers —

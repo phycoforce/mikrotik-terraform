@@ -108,6 +108,25 @@ resource "routeros_ip_firewall_filter" "input_accept_bgp" {
   src_address_list = "k8s-cluster"
 }
 
+# The ExternalDNS webhook provider in the cluster manages the router's static
+# DNS records over the REST API (www/www-ssl). Its pods egress with the node
+# address, so only the three node IPs (k8s-nodes list) are allowed. Added
+# 2026-07-30 after the input lockdown broke ExternalDNS reconciliation.
+resource "routeros_ip_firewall_filter" "input_accept_externaldns_api" {
+  chain            = "input"
+  action           = "accept"
+  comment          = "ExternalDNS REST API from k8s nodes"
+  protocol         = "tcp"
+  dst_port         = "80,443"
+  src_address_list = "k8s-nodes"
+
+  depends_on = [
+    routeros_ip_firewall_addr_list.k8s_nodes_logos,
+    routeros_ip_firewall_addr_list.k8s_nodes_ontos,
+    routeros_ip_firewall_addr_list.k8s_nodes_pneuma,
+  ]
+}
+
 # The mDNS repeater listens on IOT_VLAN and TRUSTED_VLAN (see dns.tf);
 # TRUSTED is covered by MGMT, IOT needs this carve-out.
 resource "routeros_ip_firewall_filter" "input_accept_mdns_iot" {
@@ -216,6 +235,19 @@ resource "routeros_ip_firewall_filter" "forward_accept_owncast" {
   comment          = "Trusted VLAN to Owncast Ingest"
   connection_state = "new"
   dst_address      = "10.0.20.244"
+  in_interface     = routeros_interface_vlan.trusted_vlan.name
+}
+
+# 12a — permanent workstation access to the switch (added 2026-07-30 at
+# Aaron's request). TRUSTED→BASE_VLAN routed traffic has no other accept, so
+# without this the switch becomes unreachable from the workstation the moment
+# the terminal forward drop is re-enabled.
+resource "routeros_ip_firewall_filter" "forward_accept_trusted_switch" {
+  chain            = "forward"
+  action           = "accept"
+  comment          = "Trusted VLAN to EdgeSwitch mgmt"
+  connection_state = "new"
+  dst_address      = "192.168.0.2"
   in_interface     = routeros_interface_vlan.trusted_vlan.name
 }
 
@@ -333,6 +365,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.input_accept_dns_tcp.id,          # 3b
     routeros_ip_firewall_filter.input_accept_dhcp.id,             # 3c
     routeros_ip_firewall_filter.input_accept_bgp.id,              # 3d
+    routeros_ip_firewall_filter.input_accept_externaldns_api.id,  # 3d2
     routeros_ip_firewall_filter.input_accept_mdns_iot.id,         # 3e
     routeros_ip_firewall_filter.input_accept_icmp.id,             # 4
     routeros_ip_firewall_filter.input_drop_all.id,                # 5
@@ -343,6 +376,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.forward_accept_kindles_cilium.id, # 10
     routeros_ip_firewall_filter.forward_accept_squid.id,          # 11
     routeros_ip_firewall_filter.forward_accept_owncast.id,        # 12
+    routeros_ip_firewall_filter.forward_accept_trusted_switch.id, # 12a
     routeros_ip_firewall_filter.forward_accept_plex.id,           # 13
     routeros_ip_firewall_filter.forward_accept_vlan_internet.id,  # 14
     routeros_ip_firewall_filter.forward_accept_soulseek.id,       # 15
@@ -357,7 +391,9 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.input_accept_dns_tcp,
     routeros_ip_firewall_filter.input_accept_dhcp,
     routeros_ip_firewall_filter.input_accept_bgp,
+    routeros_ip_firewall_filter.input_accept_externaldns_api,
     routeros_ip_firewall_filter.input_accept_mdns_iot,
+    routeros_ip_firewall_filter.forward_accept_trusted_switch,
     routeros_ip_firewall_filter.input_accept_base_vlan,
     routeros_ip_firewall_filter.input_accept_icmp,
     routeros_ip_firewall_filter.input_drop_all,

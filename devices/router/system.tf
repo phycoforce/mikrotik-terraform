@@ -14,10 +14,13 @@ resource "routeros_system_ntp_client" "ntp_client" {
   servers = ["pool.ntp.org"]
 }
 
+# policy trimmed to just `reboot` on-device 2026-07-30 (it only runs
+# /system reboot; the WinBox-default policy list was over-privileged and
+# blocked the terraform group from managing this row).
 resource "routeros_system_scheduler" "scheduled_reboot" {
   name       = "scheduled_reboot"
   on_event   = "/system reboot"
-  policy     = ["ftp", "reboot", "read", "write", "policy", "test", "password", "sniff", "sensitive", "romon"]
+  policy     = ["reboot"]
   start_date = "2026-03-25"
   start_time = "05:30:00"
 }

@@ -9,10 +9,16 @@ resource "routeros_ip_firewall_connection_tracking" "settings" {
   udp_timeout = "10s"
 }
 
-# Neighbor discovery on ALL interfaces — flagged in the §7.3 security notes
-# (discovery is visible from IOT/UNTRUSTED VLANs); imported as-is.
+# Neighbor discovery restricted to the MGMT list (2026-07-30, report finding
+# 5): MNDP/LLDP no longer advertises the router on IOT/UNTRUSTED/WAN, while
+# WinBox discovery keeps working from BASE and TRUSTED.
 resource "routeros_ip_neighbor_discovery_settings" "settings" {
-  discover_interface_list = "all"
+  discover_interface_list = routeros_interface_list.mgmt.name
+
+  depends_on = [
+    routeros_interface_list_member.mgmt_base_vlan,
+    routeros_interface_list_member.mgmt_trusted_vlan,
+  ]
 }
 
 # IPsec default profile (default=yes row): only the DPD tune is non-default.

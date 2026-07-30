@@ -19,16 +19,16 @@ import {
   id = "*1"
 }
 
-# Certificates by internal .id (the archived *98/*9D IDs turned out to still
-# be current — verified against router-ids.json of 2026-07-30)
+# Certificates by internal .id — re-issued 2026-07-30 with 3650-day validity
+# (old *98/*9D rows were removed on-device; state was rm'd and re-imported)
 import {
   to = routeros_system_certificate.local_root_cert
-  id = "*98"
+  id = "*9E"
 }
 
 import {
   to = routeros_system_certificate.webfig
-  id = "*9D"
+  id = "*9F"
 }
 
 # ============================================================================
@@ -789,4 +789,9 @@ import {
 import {
   to = routeros_system_ntp_client.ntp_client
   id = "."
+}
+
+import {
+  to = routeros_system_user.external_dns
+  id = "*3"
 }
