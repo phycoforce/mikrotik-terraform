@@ -207,3 +207,21 @@ import {
   to = routeros_tool_sniffer.settings
   id = "."
 }
+
+# ============================================================================
+# Post-migration: user management (2026-07-30)
+# ============================================================================
+import {
+  to = routeros_system_user_group.terraform
+  id = "*4"
+}
+
+import {
+  to = routeros_system_user.terraform
+  id = "*3"
+}
+
+import {
+  to = routeros_system_user.aaron
+  id = "*2"
+}

@@ -795,3 +795,23 @@ import {
   to = routeros_system_user.external_dns
   id = "*3"
 }
+
+import {
+  to = routeros_system_user_group.external_dns
+  id = "*6"
+}
+
+import {
+  to = routeros_system_user_group.terraform
+  id = "*4"
+}
+
+import {
+  to = routeros_system_user.terraform
+  id = "*6"
+}
+
+import {
+  to = routeros_system_user.aaron
+  id = "*2"
+}

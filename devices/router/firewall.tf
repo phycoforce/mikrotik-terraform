@@ -297,27 +297,21 @@ resource "routeros_ip_firewall_filter" "forward_accept_palworld" {
   protocol             = "udp"
 }
 
-# 17 — TERMINAL RULE for chain=forward.
+# 17 — TERMINAL RULE for chain=forward: the default-deny for all inter-VLAN
+# and inbound traffic not matched by rules 6-16a.
 #
-# !! DISABLED ON THE LIVE DEVICE !!  disabled = true below is deliberate and
-# matches live state as of the 2026-07-30 12:42/12:43 snapshots (both the
-# verbose export and the REST read show disabled=yes / "disabled": "true").
-#
-# The compact export taken earlier the same day at 12:06 shows this rule with
-# no disabled=yes, i.e. enabled — so the rule was disabled on the device
-# somewhere between 12:06 and 12:42. Config follows the newer snapshots so that
-# the first apply is a no-op.
-#
-# Consequence while it stays disabled: chain=forward has NO default-deny.
-# Anything not matched by rules 6-16 (all inter-VLAN traffic, for example) is
-# forwarded. Re-enabling it is a real traffic change, not a bookkeeping change:
-# flip this to false only deliberately, and expect anything not explicitly
-# accepted above to stop working.
+# History: found disabled on the live device during the 2026-07-30 migration
+# (Aaron had turned it off temporarily for workstation→switch access during
+# setup). Re-enabled 2026-07-30 after the permanent "Trusted VLAN to
+# EdgeSwitch mgmt" accept (rule 12a) made the workaround unnecessary.
 resource "routeros_ip_firewall_filter" "forward_drop_all" {
-  chain    = "forward"
-  action   = "drop"
-  comment  = "Drop All Other Forward"
-  disabled = true
+  chain   = "forward"
+  action  = "drop"
+  comment = "Drop All Other Forward"
+  # Pinned explicitly: the provider suppresses diffs for unset attributes, so
+  # omitting `disabled` would leave whatever the device has. This asserts the
+  # default-deny is ON.
+  disabled = false
 }
 
 # ---------------------------------------------------------------------------

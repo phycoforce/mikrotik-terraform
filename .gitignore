@@ -15,6 +15,9 @@ crash.*.log
 *.rsc
 *-ids.json
 
-# Temp Docs
+# Private
+.private
+.bin
 
-*.md
+# Local plan files (created by `just apply`; contain sensitive values)
+.tfplan
