@@ -1,9 +1,20 @@
-# Variable Files
-*.auto.tfvars
-*.auto.tfvars.json
-# Local .terraform directories
+# Local .terraform directories & state
 .terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
 
-#Local Docs
-*.md
+# Variable files — may contain credentials
+*.tfvars
+*.tfvars.json
+!example.tfvars
+
+# Device exports and ID dumps may contain sensitive values
 *.rsc
+*-ids.json
+
+# Temp Docs
+
+*.md
