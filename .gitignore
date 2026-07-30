@@ -21,3 +21,6 @@ crash.*.log
 
 # Local plan files (created by `just apply`; contain sensitive values)
 .tfplan
+
+# LLM
+CLAUDE.md
