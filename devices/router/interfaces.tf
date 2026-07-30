@@ -115,10 +115,6 @@ resource "routeros_interface_list" "vlan" {
   name = "VLAN"
 }
 
-resource "routeros_interface_list" "base" {
-  name = "BASE"
-}
-
 # MGMT — added 2026-07-30 (report finding 3): the VLANs allowed full access
 # to router management. Referenced by the "Allow Management VLANs to Router"
 # input rule in firewall.tf.
@@ -144,12 +140,8 @@ resource "routeros_interface_list" "plex_client" {
 
 # Interface list members
 
-# EXCEPTION: "Vodafone_PPPOE" is a literal string, not a resource reference.
-# The routeros_interface_pppoe_client resource is a later migration wave, so
-# there is nothing to reference yet. Convert this to a reference once the
-# PPPoE client is under management.
 resource "routeros_interface_list_member" "wan_vodafone_pppoe" {
-  interface = "Vodafone_PPPOE"
+  interface = routeros_interface_pppoe_client.vodafone.name
   list      = routeros_interface_list.wan.name
 }
 
@@ -173,10 +165,9 @@ resource "routeros_interface_list_member" "vlan_base_vlan" {
   list      = routeros_interface_list.vlan.name
 }
 
-resource "routeros_interface_list_member" "base_base_vlan" {
-  interface = routeros_interface_vlan.base_vlan.name
-  list      = routeros_interface_list.base.name
-}
+# The unused "BASE" interface list (one member, zero consumers — a carry-over
+# from the pre-migration device) was removed on 2026-07-30 (post-migration
+# audit). The switch module has its own, actively used, list of the same name.
 
 resource "routeros_interface_list_member" "vlan_iot_vlan" {
   interface = routeros_interface_vlan.iot_vlan.name

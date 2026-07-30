@@ -37,10 +37,8 @@ resource "routeros_system_user" "external_dns" {
 # rest-api from the group.
 #
 # NOTE: modifying ANY /user or /user/group resource requires the `policy`
-# right, which this group deliberately lacks today — plans stay clean, but
-# edits will fail with "not enough permissions" until the grant documented in
-# README.md is run. After granting, add "policy" to the list below in the
-# same change.
+# right. It was granted on-device and codified below on 2026-07-30 (the
+# "allow group/user provision" change), so Terraform can manage users here.
 # ---------------------------------------------------------------------------
 resource "routeros_system_user_group" "terraform" {
   name   = "terraform"
@@ -56,7 +54,20 @@ resource "routeros_system_user" "terraform" {
 # Passwords are managed out-of-band on purpose: the provider never reads them
 # back, so a Terraform-set password would sit in state/tfvars while providing
 # zero drift detection. Set them on-device (`/user set aaron password=...`).
+# SSH public keys (/user/ssh-keys) are likewise out-of-band by choice: RouterOS
+# /export never emits them, and they are re-added manually on a fresh
+# bootstrap. aaron currently carries one authorized key on this device.
 resource "routeros_system_user" "aaron" {
   name  = "aaron"
   group = "full"
+}
+
+# Factory default admin account, disabled on day one and kept under management
+# (2026-07-30 audit) so a re-enable — hand edit, config restore, netinstall —
+# shows up as drift instead of silently restoring an admin login.
+resource "routeros_system_user" "admin" {
+  name     = "admin"
+  group    = "full"
+  comment  = "system default user"
+  disabled = true
 }

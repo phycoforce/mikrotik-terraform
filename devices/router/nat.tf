@@ -1,20 +1,20 @@
-# Firewall NAT — 4 static rules: one srcnat masquerade and three dstnat
+# Firewall NAT — 3 static rules: one srcnat masquerade and two dstnat
 # port-forwards.
 #
 # Ordinal, like firewall.tf: the on-device order is asserted by the
 # routeros_move_items resource at the bottom of this file. Adding, removing or
 # reordering a resource here means the `sequence` list MUST be updated too.
 # There is no terminal rule in either NAT chain, so a mis-order here is less
-# dangerous than in firewall.tf — but the three dstnat rules match on disjoint
+# dangerous than in firewall.tf — and the two dstnat rules match on disjoint
 # ports, so their relative order is not load-bearing today and must not be
 # relied on tomorrow.
 #
 # Every rule is imported by its RouterOS internal .id (see imports.tf). No
 # dynamic rows exist in this menu on the live device.
 #
-# `log` is false on all four live rows and is omitted (the provider suppresses
-# the diff for attributes the user did not set). log-prefix is empty on all
-# four and is likewise omitted.
+# `log` is false on all three live rows and is omitted (the provider
+# suppresses the diff for attributes the user did not set). log-prefix is
+# empty on all three and is likewise omitted.
 
 # 1 — the only srcnat rule. Masquerades everything leaving via the WAN list.
 resource "routeros_ip_firewall_nat" "srcnat_masquerade" {

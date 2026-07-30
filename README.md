@@ -3,8 +3,8 @@
 Full configuration of the home network's two MikroTik devices, managed with
 [OpenTofu](https://opentofu.org/) and the
 [terraform-routeros](https://registry.terraform.io/providers/terraform-routeros/routeros)
-provider (pinned to **1.99.1** — see the quirk table in `MIGRATION-REPORT.md`
-before upgrading it).
+provider (pinned to **1.99.1** — see the quirk table in
+`.private/MIGRATION-REPORT.md` before upgrading it).
 
 | Root module | Device | Mgmt address | State |
 |---|---|---|---|
@@ -16,8 +16,10 @@ firewall (filter + NAT + rule ordering), BGP (Cilium peering), PPPoE,
 certificates, services, system settings, users and groups. Deliberately *not*
 managed: the 56 `Managed by ExternalDNS` DNS records (owned by the cluster's
 external-dns — managing them here causes a reconciliation fight), dynamic
-state (DHCP dynamic leases, dynamic bridge-VLAN rows), the `admin` account,
-and all passwords (set out-of-band; the provider can't read them back).
+state (DHCP dynamic leases, dynamic bridge-VLAN rows), all passwords (set
+out-of-band; the provider can't read them back), and SSH authorized keys
+(`/user/ssh-keys` — RouterOS `/export` never emits them; re-add manually on a
+fresh bootstrap).
 
 ## Day-to-day usage
 
@@ -93,7 +95,7 @@ though the binary API service is disabled.
 This repo *adopts* live devices: `imports.tf` in each module pins RouterOS
 internal ids from the current hardware. For a factory-fresh device:
 
-1. Minimal manual bootstrap on the device console (see `MIGRATION-BRIEF.md`
+1. Minimal manual bootstrap on the device console (see `.private/MIGRATION-BRIEF.md`
    §3 for the full versions):
 
    ```
@@ -116,14 +118,18 @@ internal ids from the current hardware. For a factory-fresh device:
 3. Set passwords for any user resources out-of-band after the first apply.
 4. Apply section by section (system → services → L2 → L3 → firewall → BGP),
    re-planning to empty after each — the order and blast-radius notes in
-   `MIGRATION-BRIEF.md` §11 apply to a rebuild too.
+   `.private/MIGRATION-BRIEF.md` §11 apply to a rebuild too.
+5. Re-add SSH authorized keys and set user passwords on-device — both are
+   deliberately outside Terraform.
 
 ## Other docs
 
-- `MIGRATION-BRIEF.md` — the original migration plan; §5/§7 explain the
-  singleton-overwrite trap and the lockout hazards. Still the best reference
-  for *why* things are shaped this way.
-- `MIGRATION-REPORT.md` — what was migrated, security findings and their
-  resolutions, and the provider v1.99.1 quirk table.
-- `JUMBO-FRAMES-BRIEF.md` — current jumbo-frame state and the task brief if
-  full L3 jumbo is ever wanted.
+These live in the gitignored `.private/` directory:
+
+- `.private/MIGRATION-BRIEF.md` — the original migration plan; §5/§7 explain
+  the singleton-overwrite trap and the lockout hazards. Still the best
+  reference for *why* things are shaped this way.
+- `.private/MIGRATION-REPORT.md` — what was migrated, security findings and
+  their resolutions, and the provider v1.99.1 quirk table.
+- `.private/JUMBO-FRAMES-BRIEF.md` — current jumbo-frame state and the task
+  brief if full L3 jumbo is ever wanted.

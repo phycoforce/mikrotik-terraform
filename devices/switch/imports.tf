@@ -225,3 +225,23 @@ import {
   to = routeros_system_user.aaron
   id = "*2"
 }
+
+# ============================================================================
+# Post-migration audit adoptions (2026-07-30). ipv6 settings is a passthrough
+# singleton ("."); the ipv6 nd default row and the admin user import by
+# internal .id.
+# ============================================================================
+import {
+  to = routeros_system_user.admin
+  id = "*1"
+}
+
+import {
+  to = routeros_ipv6_settings.settings
+  id = "."
+}
+
+import {
+  to = routeros_ipv6_neighbor_discovery.default
+  id = "*1"
+}

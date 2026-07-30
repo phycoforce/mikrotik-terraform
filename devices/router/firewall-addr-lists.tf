@@ -1,6 +1,6 @@
 # Firewall address lists
-# Two lists, 12 static rows total. Every row is enabled and has no timeout, so
-# only address/list/comment are expressed. dynamic and creation_time are
+# Three lists, 15 static rows total. Every row is enabled and has no timeout,
+# so only address/list/comment are expressed. dynamic and creation_time are
 # read-only. No dynamic:true rows exist in this menu on the live device.
 #
 # Addresses are literals rather than references: the k8s LoadBalancer VIPs
@@ -9,7 +9,7 @@
 # DHCP leases in dhcp.tf but the firewall rows are independent of them.
 
 # k8s-cluster — the Kubernetes nodes plus their in-cluster service VIPs.
-# Referenced by the firewall filter/NAT rules (a later migration wave).
+# Referenced by the firewall filter rules in firewall.tf.
 
 resource "routeros_ip_firewall_addr_list" "k8s_logos" {
   list    = "k8s-cluster"

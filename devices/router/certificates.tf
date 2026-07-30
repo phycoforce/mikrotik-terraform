@@ -1,6 +1,6 @@
 # Only the two locally-created TLS certificates are managed. The device also
-# carries a full imported CA bundle (cacert.pem_*) and auto-generated
-# WiFi-CAPsMAN certificates — those stay unmanaged.
+# carries a full imported CA bundle (cacert.pem_*, 149 entries) — that stays
+# unmanaged.
 #
 # Imported as-is; per the v1.99.1 provider docs the sign {} block must be
 # omitted when importing existing certificates (ca is read-only; the signing

@@ -58,3 +58,12 @@ resource "routeros_ip_service" "api_ssl" {
   disabled    = false
 }
 
+# DELIBERATELY UNMANAGED: the ninth static service row, "reverse-proxy" — a
+# RouterOS 7.22 built-in that fronts the 443 listener (live REST sessions,
+# including this provider's own, show up attributed to it). It CANNOT be
+# managed on provider 1.99.1: routeros_ip_service validates `numbers` against
+# a fixed name list that predates this row ("Unexpected value:
+# reverse-proxy"). Revisit on a provider upgrade. Live values 2026-07-30:
+# port=443, certificate=none, tls-version=any, disabled=false. Do NOT disable
+# it on-device: it carries the management sessions Terraform itself uses.
+

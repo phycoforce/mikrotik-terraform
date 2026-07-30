@@ -116,7 +116,7 @@ resource "routeros_ip_dhcp_server_network" "base" {
 }
 
 # Static DHCP leases
-# Only the 11 static leases are managed; the 16 dynamic:true leases on the live
+# Only the 12 static leases are managed; the 16 dynamic:true leases on the live
 # device are not (and must not be) under Terraform management.
 #
 # host_name, class_id and every active_* attribute are read-only and are

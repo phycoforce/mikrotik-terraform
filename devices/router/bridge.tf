@@ -12,8 +12,12 @@ resource "routeros_interface_bridge" "br1" {
 
 # Bridge ports
 
-# ether1 is the out-of-band recovery port: untagged access to VLAN 99 with no
-# frame-type restriction (MIGRATION-BRIEF 7.1).
+# ether1 is the out-of-band recovery port (MIGRATION-BRIEF 7.1). It is a
+# hybrid port, not a pure access port: untagged/pvid VLAN 99 plus tagged
+# membership of VLANs 10, 30 and 40 (see the bridge-VLAN rows below), with
+# frame-types unrestricted so any frame can reach the router during recovery.
+# VLAN 20 (SERVER_VLAN) is deliberately NOT tagged here — the k8s/server
+# network stays off the physical recovery jack.
 resource "routeros_interface_bridge_port" "ether1" {
   bridge    = routeros_interface_bridge.br1.name
   interface = routeros_interface_ethernet.ether1.name

@@ -130,11 +130,6 @@ import {
 }
 
 import {
-  to = routeros_interface_list.base
-  id = "*2000012"
-}
-
-import {
   to = routeros_interface_list.plex_client
   id = "*2000013"
 }
@@ -163,11 +158,6 @@ import {
 import {
   to = routeros_interface_list_member.vlan_base_vlan
   id = "*5"
-}
-
-import {
-  to = routeros_interface_list_member.base_base_vlan
-  id = "*6"
 }
 
 import {
@@ -629,11 +619,6 @@ import {
 }
 
 import {
-  to = routeros_ip_firewall_filter.forward_fasttrack_cilium
-  id = "*69"
-}
-
-import {
   to = routeros_ip_firewall_filter.forward_accept_cilium
   id = "*64"
 }
@@ -646,13 +631,6 @@ import {
 import {
   to = routeros_ip_firewall_filter.forward_accept_squid
   id = "*76"
-}
-
-# The row carrying the empty-string src-address-list — see the note on this
-# resource in firewall.tf.
-import {
-  to = routeros_ip_firewall_filter.forward_accept_owncast
-  id = "*79"
 }
 
 import {
@@ -814,4 +792,23 @@ import {
 import {
   to = routeros_system_user.aaron
   id = "*2"
+}
+
+# ============================================================================
+# Post-migration audit adoptions (2026-07-30). MAC-server singletons use
+# passthrough importers ("."); the admin user imports by internal .id.
+# ============================================================================
+import {
+  to = routeros_system_user.admin
+  id = "*1"
+}
+
+import {
+  to = routeros_tool_mac_server.settings
+  id = "."
+}
+
+import {
+  to = routeros_tool_mac_server_winbox.settings
+  id = "."
 }

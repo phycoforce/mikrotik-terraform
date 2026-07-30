@@ -9,7 +9,7 @@ terraform {
 }
 
 # The provider speaks REST over the www/www-ssl service (not api/api-ssl).
-# The switch needs www-ssl enabled first — see MIGRATION-BRIEF.md §3.1.
+# The switch needs www-ssl enabled first — see .private/MIGRATION-BRIEF.md §3.1.
 # Credentials: set username/password in terraform.tfvars (gitignored), or
 # leave them unset and export ROS_USERNAME / ROS_PASSWORD instead.
 provider "routeros" {

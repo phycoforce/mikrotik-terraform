@@ -1,4 +1,4 @@
-# Firewall filter — 25 static rules, 11 in chain=input and 14 in chain=forward.
+# Firewall filter — 23 static rules, 11 in chain=input and 12 in chain=forward.
 #
 # THIS FILE IS ORDINAL. RouterOS evaluates filter rules top-to-bottom and both
 # chains end in a terminal drop, so the order of the rules is part of the
@@ -58,7 +58,10 @@ resource "routeros_ip_firewall_filter" "input_accept_vlan" {
   ]
 }
 
-# 3
+# 3 — deliberately redundant with rule 2 (BASE_VLAN is a member of MGMT):
+# kept as a belt-and-braces guarantee that the recovery VLAN retains router
+# access even if the MGMT list is ever emptied or mis-edited. Live counters
+# show 0 packets (rule 2 always matches first); that is expected.
 resource "routeros_ip_firewall_filter" "input_accept_base_vlan" {
   chain        = "input"
   action       = "accept"
@@ -155,6 +158,10 @@ resource "routeros_ip_firewall_filter" "input_drop_all" {
   action     = "drop"
   comment    = "Drop All Other Input Traffic"
   log_prefix = "DROP_INPUT"
+  # Pinned explicitly, same as the forward terminal drop: the provider
+  # suppresses diffs for unset attributes, so omitting `disabled` would leave
+  # whatever the device has. This asserts the input default-deny is ON.
+  disabled = false
 }
 
 # ---------------------------------------------------------------------------
@@ -184,16 +191,11 @@ resource "routeros_ip_firewall_filter" "forward_accept_estab" {
 # individual routeros_ip_firewall_addr_list rows in firewall-addr-lists.tf with
 # no single resource representing the list itself, so there is nothing to
 # reference.
-resource "routeros_ip_firewall_filter" "forward_fasttrack_cilium" {
-  chain            = "forward"
-  action           = "fasttrack-connection"
-  comment          = "Trusted VLAN to Cilium"
-  connection_state = "established,related"
-  dst_address_list = "k8s-cluster"
-  in_interface     = routeros_interface_vlan.trusted_vlan.name
-}
-
-# 9
+#
+# A second fasttrack rule ("Trusted VLAN to Cilium", .id *69) used to sit
+# above this one; it was fully shadowed by rule 6 (which fasttracks ALL
+# established,related traffic) and had lifetime counters of 0, so it was
+# removed on 2026-07-30 (post-migration audit).
 resource "routeros_ip_firewall_filter" "forward_accept_cilium" {
   chain            = "forward"
   action           = "accept"
@@ -203,7 +205,7 @@ resource "routeros_ip_firewall_filter" "forward_accept_cilium" {
   in_interface     = routeros_interface_vlan.trusted_vlan.name
 }
 
-# 10
+# 9
 # src_address_list is the literal list name "kindles" for the same reason as
 # "k8s-cluster" above — the list is a set of individual addr_list rows.
 resource "routeros_ip_firewall_filter" "forward_accept_kindles_cilium" {
@@ -215,7 +217,7 @@ resource "routeros_ip_firewall_filter" "forward_accept_kindles_cilium" {
   src_address_list = "kindles"
 }
 
-# 11
+# 10
 resource "routeros_ip_firewall_filter" "forward_accept_squid" {
   chain            = "forward"
   action           = "accept"
@@ -225,23 +227,15 @@ resource "routeros_ip_firewall_filter" "forward_accept_squid" {
   in_interface     = routeros_interface_vlan.trusted_vlan.name
 }
 
-# 12
-# The live row originally carried a stray empty-string src-address-list (a
-# WebFig accident, functionally inert). Cleared on-device via REST unset and
-# removed from config on 2026-07-30 per the migration report decision.
-resource "routeros_ip_firewall_filter" "forward_accept_owncast" {
-  chain            = "forward"
-  action           = "accept"
-  comment          = "Trusted VLAN to Owncast Ingest"
-  connection_state = "new"
-  dst_address      = "10.0.20.244"
-  in_interface     = routeros_interface_vlan.trusted_vlan.name
-}
-
-# 12a — permanent workstation access to the switch (added 2026-07-30 at
+# 11 — permanent workstation access to the switch (added 2026-07-30 at
 # Aaron's request). TRUSTED→BASE_VLAN routed traffic has no other accept, so
 # without this the switch becomes unreachable from the workstation the moment
 # the terminal forward drop is re-enabled.
+#
+# A "Trusted VLAN to Owncast Ingest" accept (.id *79) used to sit above this
+# rule; its match set was a strict subset of rule 8's (10.0.20.244 is in the
+# k8s-cluster list, comment "owncast-ingress") and its lifetime counters were
+# 0, so it was removed on 2026-07-30 (post-migration audit).
 resource "routeros_ip_firewall_filter" "forward_accept_trusted_switch" {
   chain            = "forward"
   action           = "accept"
@@ -251,7 +245,7 @@ resource "routeros_ip_firewall_filter" "forward_accept_trusted_switch" {
   in_interface     = routeros_interface_vlan.trusted_vlan.name
 }
 
-# 13
+# 12
 resource "routeros_ip_firewall_filter" "forward_accept_plex" {
   chain             = "forward"
   action            = "accept"
@@ -261,7 +255,7 @@ resource "routeros_ip_firewall_filter" "forward_accept_plex" {
   in_interface_list = routeros_interface_list.plex_client.name
 }
 
-# 13a — printing to the IOT_VLAN (added 2026-07-30)
+# 13 — printing to the IOT_VLAN (added 2026-07-30)
 resource "routeros_ip_firewall_filter" "forward_accept_printer" {
   chain            = "forward"
   action           = "accept"
@@ -330,7 +324,7 @@ resource "routeros_ip_firewall_filter" "forward_drop_all" {
 # Filter rule order
 # ---------------------------------------------------------------------------
 #
-# routeros_move_items asserts the on-device order of the 25 rules above.
+# routeros_move_items asserts the on-device order of the 23 rules above.
 # Behaviour verified in the provider source (routeros/resource_move.go,
 # v1.99.1):
 #
@@ -358,7 +352,7 @@ resource "routeros_ip_firewall_filter" "forward_drop_all" {
 #   * Destroy only drops it from state (DefaultSystemDelete) and emits a
 #     warning; it never deletes or reorders rules.
 #
-# depends_on covers all 25 rules so the move cannot be attempted before every
+# depends_on covers all 23 rules so the move cannot be attempted before every
 # rule exists in state.
 resource "routeros_move_items" "firewall_filter_order" {
   resource_path = "/ip/firewall/filter"
@@ -377,14 +371,12 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.input_drop_all.id,                # 5
     routeros_ip_firewall_filter.forward_fasttrack_estab.id,       # 6
     routeros_ip_firewall_filter.forward_accept_estab.id,          # 7
-    routeros_ip_firewall_filter.forward_fasttrack_cilium.id,      # 8
-    routeros_ip_firewall_filter.forward_accept_cilium.id,         # 9
-    routeros_ip_firewall_filter.forward_accept_kindles_cilium.id, # 10
-    routeros_ip_firewall_filter.forward_accept_squid.id,          # 11
-    routeros_ip_firewall_filter.forward_accept_owncast.id,        # 12
-    routeros_ip_firewall_filter.forward_accept_trusted_switch.id, # 12a
-    routeros_ip_firewall_filter.forward_accept_plex.id,           # 13
-    routeros_ip_firewall_filter.forward_accept_printer.id,        # 13a
+    routeros_ip_firewall_filter.forward_accept_cilium.id,         # 8
+    routeros_ip_firewall_filter.forward_accept_kindles_cilium.id, # 9
+    routeros_ip_firewall_filter.forward_accept_squid.id,          # 10
+    routeros_ip_firewall_filter.forward_accept_trusted_switch.id, # 11
+    routeros_ip_firewall_filter.forward_accept_plex.id,           # 12
+    routeros_ip_firewall_filter.forward_accept_printer.id,        # 13
     routeros_ip_firewall_filter.forward_accept_vlan_internet.id,  # 14
     routeros_ip_firewall_filter.forward_accept_soulseek.id,       # 15
     routeros_ip_firewall_filter.forward_accept_palworld.id,       # 16
@@ -406,11 +398,9 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.input_drop_all,
     routeros_ip_firewall_filter.forward_fasttrack_estab,
     routeros_ip_firewall_filter.forward_accept_estab,
-    routeros_ip_firewall_filter.forward_fasttrack_cilium,
     routeros_ip_firewall_filter.forward_accept_cilium,
     routeros_ip_firewall_filter.forward_accept_kindles_cilium,
     routeros_ip_firewall_filter.forward_accept_squid,
-    routeros_ip_firewall_filter.forward_accept_owncast,
     routeros_ip_firewall_filter.forward_accept_plex,
     routeros_ip_firewall_filter.forward_accept_printer,
     routeros_ip_firewall_filter.forward_accept_vlan_internet,

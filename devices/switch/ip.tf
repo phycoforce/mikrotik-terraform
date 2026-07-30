@@ -43,3 +43,19 @@ resource "routeros_ip_dns" "dns" {
 resource "routeros_ip_neighbor_discovery_settings" "settings" {
   discover_interface_list = routeros_interface_list.base.name
 }
+
+# IPv6 disabled network-wide, matching the router's invariant (see
+# devices/router/misc.tf): re-enabling would expose the switch's management
+# services over unfiltered IPv6 link-local — this device has no IPv6 firewall.
+# Brought under management 2026-07-30 (post-migration audit); before that the
+# switch silently ran with IPv6 ON while the router pinned it off.
+resource "routeros_ipv6_settings" "settings" {
+  disable_ipv6 = true
+}
+
+# IPv6 ND default row, pinned at its live values (all defaults; inert while
+# IPv6 is disabled) so hand edits show up as drift.
+resource "routeros_ipv6_neighbor_discovery" "default" {
+  interface     = "all"
+  advertise_dns = false
+}
