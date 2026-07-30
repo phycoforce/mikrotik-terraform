@@ -1,4 +1,4 @@
-# Firewall filter — 17 static rules, 5 in chain=input and 12 in chain=forward.
+# Firewall filter — 25 static rules, 11 in chain=input and 14 in chain=forward.
 #
 # THIS FILE IS ORDINAL. RouterOS evaluates filter rules top-to-bottom and both
 # chains end in a terminal drop, so the order of the rules is part of the
@@ -261,6 +261,18 @@ resource "routeros_ip_firewall_filter" "forward_accept_plex" {
   in_interface_list = routeros_interface_list.plex_client.name
 }
 
+# 13a — printing to the IOT_VLAN (added 2026-07-30)
+resource "routeros_ip_firewall_filter" "forward_accept_printer" {
+  chain            = "forward"
+  action           = "accept"
+  comment          = "Trusted VLAN to Printer"
+  connection_state = "new"
+  protocol         = "tcp"
+  dst_address      = routeros_ip_dhcp_server_lease.iot_printer.address
+  dst_port         = "515,631,9100"
+  in_interface     = routeros_interface_vlan.trusted_vlan.name
+}
+
 # 14
 resource "routeros_ip_firewall_filter" "forward_accept_vlan_internet" {
   chain              = "forward"
@@ -298,7 +310,7 @@ resource "routeros_ip_firewall_filter" "forward_accept_palworld" {
 }
 
 # 17 — TERMINAL RULE for chain=forward: the default-deny for all inter-VLAN
-# and inbound traffic not matched by rules 6-16a.
+# and inbound traffic not matched by rules 6-16.
 #
 # History: found disabled on the live device during the 2026-07-30 migration
 # (Aaron had turned it off temporarily for workstation→switch access during
@@ -318,7 +330,7 @@ resource "routeros_ip_firewall_filter" "forward_drop_all" {
 # Filter rule order
 # ---------------------------------------------------------------------------
 #
-# routeros_move_items asserts the on-device order of the 17 rules above.
+# routeros_move_items asserts the on-device order of the 25 rules above.
 # Behaviour verified in the provider source (routeros/resource_move.go,
 # v1.99.1):
 #
@@ -346,7 +358,7 @@ resource "routeros_ip_firewall_filter" "forward_drop_all" {
 #   * Destroy only drops it from state (DefaultSystemDelete) and emits a
 #     warning; it never deletes or reorders rules.
 #
-# depends_on covers all 17 rules so the move cannot be attempted before every
+# depends_on covers all 25 rules so the move cannot be attempted before every
 # rule exists in state.
 resource "routeros_move_items" "firewall_filter_order" {
   resource_path = "/ip/firewall/filter"
@@ -372,6 +384,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.forward_accept_owncast.id,        # 12
     routeros_ip_firewall_filter.forward_accept_trusted_switch.id, # 12a
     routeros_ip_firewall_filter.forward_accept_plex.id,           # 13
+    routeros_ip_firewall_filter.forward_accept_printer.id,        # 13a
     routeros_ip_firewall_filter.forward_accept_vlan_internet.id,  # 14
     routeros_ip_firewall_filter.forward_accept_soulseek.id,       # 15
     routeros_ip_firewall_filter.forward_accept_palworld.id,       # 16
@@ -399,6 +412,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.forward_accept_squid,
     routeros_ip_firewall_filter.forward_accept_owncast,
     routeros_ip_firewall_filter.forward_accept_plex,
+    routeros_ip_firewall_filter.forward_accept_printer,
     routeros_ip_firewall_filter.forward_accept_vlan_internet,
     routeros_ip_firewall_filter.forward_accept_soulseek,
     routeros_ip_firewall_filter.forward_accept_palworld,

@@ -219,3 +219,12 @@ resource "routeros_ip_dhcp_server_lease" "iot_13" {
   mac_address = "20:4E:F6:B0:47:33"
   server      = routeros_ip_dhcp_server.iot_dhcp.name
 }
+
+# Printer Static Lease
+resource "routeros_ip_dhcp_server_lease" "iot_printer" {
+  address     = "10.0.40.10"
+  mac_address = "C8:94:02:3C:74:B4"
+  client_id   = "1:c8:94:2:3c:74:b4"
+  server      = routeros_ip_dhcp_server.iot_dhcp.name
+  comment     = "Brother HL-L2350DW printer"
+}
