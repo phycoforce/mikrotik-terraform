@@ -25,3 +25,10 @@ resource "routeros_tool_mac_server_winbox" "settings" {
     routeros_interface_list_member.mgmt_trusted_vlan,
   ]
 }
+
+# Bandwidth-test responder ("btest", TCP/UDP 2000) — RouterOS ships it
+# enabled. Unused on this network, so disabled 2026-07-30 (post-migration
+# audit follow-up); authenticate/max-sessions stay at their defaults.
+resource "routeros_tool_bandwidth_server" "settings" {
+  enabled = false
+}

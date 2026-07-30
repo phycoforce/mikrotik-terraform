@@ -245,3 +245,8 @@ import {
   to = routeros_ipv6_neighbor_discovery.default
   id = "*1"
 }
+
+import {
+  to = routeros_tool_bandwidth_server.settings
+  id = "."
+}

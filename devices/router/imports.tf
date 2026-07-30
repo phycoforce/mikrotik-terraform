@@ -812,3 +812,8 @@ import {
   to = routeros_tool_mac_server_winbox.settings
   id = "."
 }
+
+import {
+  to = routeros_tool_bandwidth_server.settings
+  id = "."
+}
