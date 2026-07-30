@@ -119,6 +119,24 @@ resource "routeros_interface_list" "base" {
   name = "BASE"
 }
 
+# MGMT — added 2026-07-30 (report finding 3): the VLANs allowed full access
+# to router management. Referenced by the "Allow Management VLANs to Router"
+# input rule in firewall.tf.
+resource "routeros_interface_list" "mgmt" {
+  name    = "MGMT"
+  comment = "VLANs with full router management access"
+}
+
+resource "routeros_interface_list_member" "mgmt_base_vlan" {
+  interface = routeros_interface_vlan.base_vlan.name
+  list      = routeros_interface_list.mgmt.name
+}
+
+resource "routeros_interface_list_member" "mgmt_trusted_vlan" {
+  interface = routeros_interface_vlan.trusted_vlan.name
+  list      = routeros_interface_list.mgmt.name
+}
+
 resource "routeros_interface_list" "plex_client" {
   name    = "PLEX_CLIENT"
   comment = "Plex Client VLAN Interface Members"

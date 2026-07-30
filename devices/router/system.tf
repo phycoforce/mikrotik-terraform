@@ -6,9 +6,13 @@ resource "routeros_system_clock" "clock" {
   time_zone_name = "Europe/London"
 }
 
-# NOTE: the NTP client is deliberately NOT managed — it is unconfigured on the
-# router (enabled=false, no servers) while the switch syncs to pool.ntp.org.
-# Probable oversight; flagged in the migration report as a follow-up decision.
+# NTP client — added 2026-07-30 per the migration report decision (the router
+# previously had no time source beyond the RTC; the switch already syncs to
+# pool.ntp.org). This mirrors the switch configuration.
+resource "routeros_system_ntp_client" "ntp_client" {
+  enabled = true
+  servers = ["pool.ntp.org"]
+}
 
 resource "routeros_system_scheduler" "scheduled_reboot" {
   name       = "scheduled_reboot"

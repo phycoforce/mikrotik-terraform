@@ -52,30 +52,8 @@ resource "routeros_ip_firewall_nat" "dstnat_palworld" {
   to_ports          = "8211"
 }
 
-# 4 — DEAD CONFIG, retained deliberately.
-#
-# Disabled on the device (disabled=yes in both exports and "disabled": "true"
-# in the REST read) and it forwards to 10.0.60.15, an address in a /24 that
-# does not exist anywhere in this configuration — there is no 10.0.60.0/24
-# interface address, DHCP network or pool. It cannot ever have matched.
-#
-# It is managed here rather than dropped so that this wave stays a faithful
-# lift-and-shift and so that the move sequence below covers every row in the
-# menu. Deleting it is a separate, deliberate decision for the operator: remove
-# this resource and its import block, and drop its entry from `sequence`.
-#
-# There is no matching filter rule for port 32400, so even enabled it would be
-# dropped by chain=forward once the terminal drop is re-enabled.
-resource "routeros_ip_firewall_nat" "dstnat_plex_temporary" {
-  chain             = "dstnat"
-  action            = "dst-nat"
-  comment           = "Plex (Temporary)"
-  disabled          = true
-  dst_port          = "32400"
-  in_interface_list = routeros_interface_list.wan.name
-  protocol          = "tcp"
-  to_addresses      = "10.0.60.15"
-}
+# The dead "Plex (Temporary)" rule (disabled, forwarding to the nonexistent
+# 10.0.60.15) was removed on 2026-07-30 per the migration report decision.
 
 # ---------------------------------------------------------------------------
 # NAT rule order
@@ -87,23 +65,18 @@ resource "routeros_ip_firewall_nat" "dstnat_plex_temporary" {
 # absolute position is not asserted, and the read no-ops when the device order
 # already matches.
 #
-# The disabled "Plex (Temporary)" rule is last on the device, so it is the
-# anchor here. If that rule is ever deleted, this sequence must be rewritten
-# with the new last rule as the anchor.
 resource "routeros_move_items" "firewall_nat_order" {
   resource_path = "/ip/firewall/nat"
 
   sequence = [
-    routeros_ip_firewall_nat.srcnat_masquerade.id,    # 1
-    routeros_ip_firewall_nat.dstnat_soulseek.id,      # 2
-    routeros_ip_firewall_nat.dstnat_palworld.id,      # 3
-    routeros_ip_firewall_nat.dstnat_plex_temporary.id # 4 (anchor)
+    routeros_ip_firewall_nat.srcnat_masquerade.id, # 1
+    routeros_ip_firewall_nat.dstnat_soulseek.id,   # 2
+    routeros_ip_firewall_nat.dstnat_palworld.id    # 3 (anchor)
   ]
 
   depends_on = [
     routeros_ip_firewall_nat.srcnat_masquerade,
     routeros_ip_firewall_nat.dstnat_soulseek,
     routeros_ip_firewall_nat.dstnat_palworld,
-    routeros_ip_firewall_nat.dstnat_plex_temporary,
   ]
 }

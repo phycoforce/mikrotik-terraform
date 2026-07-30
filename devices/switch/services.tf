@@ -1,5 +1,5 @@
-# Faithful import of live state: ftp and telnet are genuinely enabled on this
-# device. Disabling them is a deliberate later change, not part of this import.
+# ftp/telnet were enabled via RouterOS defaults when first imported; disabled
+# deliberately post-migration (2026-07-30, security findings item 2).
 #
 # NOTE: routeros_ip_service cannot be imported in provider v1.99.1 (see
 # imports.tf). These resources are adopted on first apply: the provider's
@@ -9,7 +9,7 @@
 resource "routeros_ip_service" "ftp" {
   numbers  = "ftp"
   port     = 21
-  disabled = false
+  disabled = true
 }
 
 resource "routeros_ip_service" "ssh" {
@@ -21,7 +21,7 @@ resource "routeros_ip_service" "ssh" {
 resource "routeros_ip_service" "telnet" {
   numbers  = "telnet"
   port     = 23
-  disabled = false
+  disabled = true
 }
 
 resource "routeros_ip_service" "www" {

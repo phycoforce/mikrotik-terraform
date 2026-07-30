@@ -699,12 +699,6 @@ import {
   id = "*7"
 }
 
-# Disabled dead rule pointing at a nonexistent 10.0.60.0/24 — imported so the
-# menu is fully managed and the move sequence is unambiguous. See nat.tf.
-import {
-  to = routeros_ip_firewall_nat.dstnat_plex_temporary
-  id = "*5"
-}
 
 # ============================================================================
 # Wave 5: PPPoE client (import by internal .id; password matches live value,
@@ -787,4 +781,12 @@ import {
 import {
   to = routeros_routing_bgp_connection.ontos
   id = "*13"
+}
+
+# ============================================================================
+# Post-migration additions (2026-07-30 report decisions)
+# ============================================================================
+import {
+  to = routeros_system_ntp_client.ntp_client
+  id = "."
 }

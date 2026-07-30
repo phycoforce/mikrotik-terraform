@@ -39,12 +39,23 @@ resource "routeros_ip_firewall_filter" "input_accept_estab" {
   connection_state = "established,related"
 }
 
-# 2
+# 2 — hardened 2026-07-30 (report finding 3): was in-interface-list=VLAN,
+# which exposed SSH/WinBox/WebFig to IOT and UNTRUSTED. Now only the MGMT
+# list (BASE_VLAN + TRUSTED_VLAN) gets full router access; the other VLANs
+# keep the specific services they need via rules 2a-2e below.
+# depends_on the members: the list must be populated before this rule narrows,
+# or management access (including the provider's own REST session) would drop
+# mid-apply.
 resource "routeros_ip_firewall_filter" "input_accept_vlan" {
   chain             = "input"
   action            = "accept"
-  comment           = "Allow VLAN Access to Router"
-  in_interface_list = routeros_interface_list.vlan.name
+  comment           = "Allow Management VLANs to Router"
+  in_interface_list = routeros_interface_list.mgmt.name
+
+  depends_on = [
+    routeros_interface_list_member.mgmt_base_vlan,
+    routeros_interface_list_member.mgmt_trusted_vlan,
+  ]
 }
 
 # 3
@@ -53,6 +64,59 @@ resource "routeros_ip_firewall_filter" "input_accept_base_vlan" {
   action       = "accept"
   comment      = "Allow Base_Vlan Full Access"
   in_interface = routeros_interface_vlan.base_vlan.name
+}
+
+# 3a-3e — service carve-outs for the VLANs no longer covered by rule 2.
+# DNS for every VLAN whose DHCP network hands out the router as resolver
+# (TRUSTED/SERVER/UNTRUSTED/BASE; IOT uses 1.1.1.1/8.8.8.8 directly).
+resource "routeros_ip_firewall_filter" "input_accept_dns_udp" {
+  chain             = "input"
+  action            = "accept"
+  comment           = "DNS from VLANs (udp)"
+  protocol          = "udp"
+  dst_port          = "53"
+  in_interface_list = routeros_interface_list.vlan.name
+}
+
+resource "routeros_ip_firewall_filter" "input_accept_dns_tcp" {
+  chain             = "input"
+  action            = "accept"
+  comment           = "DNS from VLANs (tcp)"
+  protocol          = "tcp"
+  dst_port          = "53"
+  in_interface_list = routeros_interface_list.vlan.name
+}
+
+# DHCP renewals are unicast to the server address and traverse chain=input.
+resource "routeros_ip_firewall_filter" "input_accept_dhcp" {
+  chain             = "input"
+  action            = "accept"
+  comment           = "DHCP from VLANs"
+  protocol          = "udp"
+  dst_port          = "67"
+  in_interface_list = routeros_interface_list.vlan.name
+}
+
+# Cilium BGP peers (logos/pneuma/ontos) connect to 10.0.20.1:179 — without
+# this, the cluster's LoadBalancer advertisement dies.
+resource "routeros_ip_firewall_filter" "input_accept_bgp" {
+  chain            = "input"
+  action           = "accept"
+  comment          = "BGP from k8s cluster (Cilium)"
+  protocol         = "tcp"
+  dst_port         = "179"
+  src_address_list = "k8s-cluster"
+}
+
+# The mDNS repeater listens on IOT_VLAN and TRUSTED_VLAN (see dns.tf);
+# TRUSTED is covered by MGMT, IOT needs this carve-out.
+resource "routeros_ip_firewall_filter" "input_accept_mdns_iot" {
+  chain        = "input"
+  action       = "accept"
+  comment      = "mDNS repeater (IOT_VLAN)"
+  protocol     = "udp"
+  dst_port     = "5353"
+  in_interface = routeros_interface_vlan.iot_vlan.name
 }
 
 # 4
@@ -143,18 +207,9 @@ resource "routeros_ip_firewall_filter" "forward_accept_squid" {
 }
 
 # 12
-# src_address_list = "" is NOT a mistake in this file — it reproduces the live
-# row, which really does carry an empty-string src-address-list (the REST row
-# returns "src-address-list": "" and the verbose export prints
-# src-address-list="" where every other rule prints !src-address-list). It is
-# almost certainly a Winbox/WebFig accident and is functionally inert.
-# Pinning it keeps config and device identical.
-# Caveat, verified in the provider source: src_address_list is one of the
-# MetaSetUnsetFields, so an explicit "" is serialized as `!src-address-list`
-# (an unset) on any create/update of this rule. That never fires on its own —
-# state and config are both "" so there is no diff — but if this rule is ever
-# edited for another reason, the apply will quietly clear the empty string on
-# the device. Harmless, and arguably a fix.
+# The live row originally carried a stray empty-string src-address-list (a
+# WebFig accident, functionally inert). Cleared on-device via REST unset and
+# removed from config on 2026-07-30 per the migration report decision.
 resource "routeros_ip_firewall_filter" "forward_accept_owncast" {
   chain            = "forward"
   action           = "accept"
@@ -162,7 +217,6 @@ resource "routeros_ip_firewall_filter" "forward_accept_owncast" {
   connection_state = "new"
   dst_address      = "10.0.20.244"
   in_interface     = routeros_interface_vlan.trusted_vlan.name
-  src_address_list = ""
 }
 
 # 13
@@ -275,6 +329,11 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.input_accept_estab.id,            # 1
     routeros_ip_firewall_filter.input_accept_vlan.id,             # 2
     routeros_ip_firewall_filter.input_accept_base_vlan.id,        # 3
+    routeros_ip_firewall_filter.input_accept_dns_udp.id,          # 3a
+    routeros_ip_firewall_filter.input_accept_dns_tcp.id,          # 3b
+    routeros_ip_firewall_filter.input_accept_dhcp.id,             # 3c
+    routeros_ip_firewall_filter.input_accept_bgp.id,              # 3d
+    routeros_ip_firewall_filter.input_accept_mdns_iot.id,         # 3e
     routeros_ip_firewall_filter.input_accept_icmp.id,             # 4
     routeros_ip_firewall_filter.input_drop_all.id,                # 5
     routeros_ip_firewall_filter.forward_fasttrack_estab.id,       # 6
@@ -294,6 +353,11 @@ resource "routeros_move_items" "firewall_filter_order" {
   depends_on = [
     routeros_ip_firewall_filter.input_accept_estab,
     routeros_ip_firewall_filter.input_accept_vlan,
+    routeros_ip_firewall_filter.input_accept_dns_udp,
+    routeros_ip_firewall_filter.input_accept_dns_tcp,
+    routeros_ip_firewall_filter.input_accept_dhcp,
+    routeros_ip_firewall_filter.input_accept_bgp,
+    routeros_ip_firewall_filter.input_accept_mdns_iot,
     routeros_ip_firewall_filter.input_accept_base_vlan,
     routeros_ip_firewall_filter.input_accept_icmp,
     routeros_ip_firewall_filter.input_drop_all,
