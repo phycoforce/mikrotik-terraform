@@ -1,4 +1,4 @@
-# Firewall filter — 23 static rules, 11 in chain=input and 12 in chain=forward.
+# Firewall filter — 24 static rules, 11 in chain=input and 13 in chain=forward.
 #
 # THIS FILE IS ORDINAL. RouterOS evaluates filter rules top-to-bottom and both
 # chains end in a terminal drop, so the order of the rules is part of the
@@ -267,6 +267,21 @@ resource "routeros_ip_firewall_filter" "forward_accept_printer" {
   in_interface     = routeros_interface_vlan.trusted_vlan.name
 }
 
+# 13a — casting to the IOT_VLAN soundbar (added 2026-10-22): Google Cast
+# (8008/8009/8443) and Spotify Connect. Spotify uses a port the bar picks
+# dynamically and advertises over mDNS (repeated by the router, see dns.tf),
+# so there is no protocol/port matcher — the scope is the single destination
+# host. AirPlay 2 is deliberately not supported: it would also need a
+# soundbar→TRUSTED UDP accept (receiver-initiated timing/control flows).
+resource "routeros_ip_firewall_filter" "forward_accept_soundbar" {
+  chain            = "forward"
+  action           = "accept"
+  comment          = "Trusted VLAN to Soundbar"
+  connection_state = "new"
+  dst_address      = routeros_ip_dhcp_server_lease.iot_soundbar.address
+  in_interface     = routeros_interface_vlan.trusted_vlan.name
+}
+
 # 14
 resource "routeros_ip_firewall_filter" "forward_accept_vlan_internet" {
   chain              = "forward"
@@ -377,6 +392,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.forward_accept_trusted_switch.id, # 11
     routeros_ip_firewall_filter.forward_accept_plex.id,           # 12
     routeros_ip_firewall_filter.forward_accept_printer.id,        # 13
+    routeros_ip_firewall_filter.forward_accept_soundbar.id,       # 13a
     routeros_ip_firewall_filter.forward_accept_vlan_internet.id,  # 14
     routeros_ip_firewall_filter.forward_accept_soulseek.id,       # 15
     routeros_ip_firewall_filter.forward_accept_palworld.id,       # 16
@@ -403,6 +419,7 @@ resource "routeros_move_items" "firewall_filter_order" {
     routeros_ip_firewall_filter.forward_accept_squid,
     routeros_ip_firewall_filter.forward_accept_plex,
     routeros_ip_firewall_filter.forward_accept_printer,
+    routeros_ip_firewall_filter.forward_accept_soundbar,
     routeros_ip_firewall_filter.forward_accept_vlan_internet,
     routeros_ip_firewall_filter.forward_accept_soulseek,
     routeros_ip_firewall_filter.forward_accept_palworld,

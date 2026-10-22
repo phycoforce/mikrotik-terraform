@@ -228,3 +228,13 @@ resource "routeros_ip_dhcp_server_lease" "iot_printer" {
   server      = routeros_ip_dhcp_server.iot_dhcp.name
   comment     = "Brother HL-L2350DW printer"
 }
+
+# Soundbar Static Lease (added 2026-10-22) — pins the address the casting rule
+# in firewall.tf targets. Same address it already held dynamically.
+resource "routeros_ip_dhcp_server_lease" "iot_soundbar" {
+  address     = "10.0.40.14"
+  mac_address = "B8:A0:B8:18:91:F4"
+  client_id   = "1:b8:a0:b8:18:91:f4"
+  server      = routeros_ip_dhcp_server.iot_dhcp.name
+  comment     = "Samsung HW-Q930F soundbar"
+}
