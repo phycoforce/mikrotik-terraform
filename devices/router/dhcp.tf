@@ -149,6 +149,15 @@ resource "routeros_ip_dhcp_server_lease" "trusted_2" {
   server      = routeros_ip_dhcp_server.trusted_dhcp.name
 }
 
+# GMKtec K12 Static Lease (added 2026-11-10) — on wifi; same address it last
+# held dynamically. Matched on MAC only (no client-id), like the Roomba lease.
+resource "routeros_ip_dhcp_server_lease" "trusted_gmktec_k12" {
+  address     = "10.0.10.12"
+  mac_address = "B4:17:A8:6A:05:23"
+  server      = routeros_ip_dhcp_server.trusted_dhcp.name
+  comment     = "GMKtec K12"
+}
+
 # SERVER_DHCP — the Kubernetes nodes (PXE-booted via the netboot.xyz pointers
 # on the 10.0.20.0/24 network above)
 
