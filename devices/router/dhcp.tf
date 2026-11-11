@@ -149,11 +149,12 @@ resource "routeros_ip_dhcp_server_lease" "trusted_2" {
   server      = routeros_ip_dhcp_server.trusted_dhcp.name
 }
 
-# GMKtec K12 Static Lease (added 2026-11-10) — on wifi; same address it last
-# held dynamically. Matched on MAC only (no client-id), like the Roomba lease.
+# GMKtec K12 Static Lease (added 2026-11-10, re-pinned 2026-11-11 after a
+# wifi card swap changed its MAC) — on wifi; same address it last held
+# dynamically. Matched on MAC only (no client-id), like the Roomba lease.
 resource "routeros_ip_dhcp_server_lease" "trusted_gmktec_k12" {
-  address     = "10.0.10.12"
-  mac_address = "B4:17:A8:6A:05:23"
+  address     = "10.0.10.14"
+  mac_address = "F8:CF:52:CE:1A:E9"
   server      = routeros_ip_dhcp_server.trusted_dhcp.name
   comment     = "GMKtec K12"
 }
