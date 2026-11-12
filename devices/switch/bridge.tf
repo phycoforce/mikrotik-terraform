@@ -19,6 +19,13 @@ resource "routeros_interface_bridge_port" "ether1" {
   comment   = "defconf"
 }
 
+resource "routeros_interface_bridge_port" "sfp_sfpplus1" {
+  bridge      = routeros_interface_bridge.br1.name
+  interface   = routeros_interface_ethernet.sfp_sfpplus1.name
+  pvid        = 10
+  frame_types = "admit-only-untagged-and-priority-tagged"
+}
+
 resource "routeros_interface_bridge_port" "sfp_sfpplus2" {
   bridge      = routeros_interface_bridge.br1.name
   interface   = routeros_interface_ethernet.sfp_sfpplus2.name
@@ -61,7 +68,7 @@ resource "routeros_interface_bridge_port" "sfp_sfpplus8" {
   frame_types = "admit-only-untagged-and-priority-tagged"
 }
 
-# Bridge VLANs (static entries only; VLANs 1 and 20 also exist as dynamic
+# Bridge VLANs (static entries only; VLANs 1, 10 and 20 also exist as dynamic
 # "added by pvid" rows and are intentionally not managed here)
 
 resource "routeros_interface_bridge_vlan" "vlan10" {
